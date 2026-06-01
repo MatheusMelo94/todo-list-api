@@ -19,7 +19,7 @@ import org.springframework.web.context.WebApplicationContext;
  * {@link BeforeEach} (per plan § Estrategia de testes — Integration).
  */
 @SpringBootTest
-abstract class AbstractMongoIntegrationTest {
+public abstract class AbstractMongoIntegrationTest {
 
     @Autowired
     protected MongoTemplate mongoTemplate;
