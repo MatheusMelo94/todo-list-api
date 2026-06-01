@@ -1,5 +1,6 @@
 package com.matheusmelo.todolist;
 
+import jakarta.servlet.Filter;
 import org.junit.jupiter.api.BeforeEach;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
@@ -27,11 +28,22 @@ public abstract class AbstractMongoIntegrationTest {
     @Autowired
     protected WebApplicationContext webApplicationContext;
 
+    /**
+     * Cadeia de filtros do Spring Security (headers, CORS) + demais filtros da app
+     * (ex.: RateLimitFilter). Aplicada ao MockMvc para que os ITs exercitem a cadeia
+     * de seguranca real (per plan § Architecture Overview — "a cadeia de seguranca e
+     * exercida nos ITs"). Sem isto, o webAppContextSetup ignora os filtros.
+     */
+    @Autowired
+    protected Filter springSecurityFilterChain;
+
     protected MockMvc mockMvc;
 
     @BeforeEach
     void resetState() {
         mongoTemplate.getDb().drop();
-        mockMvc = MockMvcBuilders.webAppContextSetup(webApplicationContext).build();
+        mockMvc = MockMvcBuilders.webAppContextSetup(webApplicationContext)
+                .addFilters(springSecurityFilterChain)
+                .build();
     }
 }
