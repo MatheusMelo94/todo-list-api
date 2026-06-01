@@ -5,6 +5,12 @@ spring:
     mongodb:
       uri: ${MONGODB_URI:mongodb://localhost:27017/todolist}
 
+# Allowlist de CORS por origem (PDR-0003; security-conventions.md § CORS Default).
+# NUNCA '*'. Origens separadas por virgula via env CORS_ALLOWED_ORIGINS;
+# default aponta para o frontend de dev local.
+cors:
+  allowed-origins: ${CORS_ALLOWED_ORIGINS:http://localhost:3000}
+
 # Fixa o comportamento de erro do Spring (nao depender do default) — remedia F-0001
 # (security-findings-001.md), per architecture-conventions.md § Error Handling
 # (sem internals ao cliente) e § Logging (detalhe so no servidor). Config base;

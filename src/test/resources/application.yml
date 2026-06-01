@@ -6,3 +6,7 @@ de:
     mongodb:
       embedded:
         version: 7.0.14
+
+# Allowlist de CORS fixa para os ITs (CorsConfigIT). Nunca '*'.
+cors:
+  allowed-origins: https://app.exemplo.test

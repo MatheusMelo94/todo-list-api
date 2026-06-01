@@ -1,10 +1,17 @@
 package com.matheusmelo.todolist.config;
 
+import java.util.Arrays;
+import java.util.List;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.security.config.Customizer;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.header.writers.ReferrerPolicyHeaderWriter;
+import org.springframework.web.cors.CorsConfiguration;
+import org.springframework.web.cors.CorsConfigurationSource;
+import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
 
 /**
  * Configuracao do Spring Security restrita a headers de seguranca + CORS
@@ -18,10 +25,26 @@ import org.springframework.security.web.header.writers.ReferrerPolicyHeaderWrite
 @Configuration
 public class SecurityConfig {
 
+    /**
+     * Allowlist de origens de CORS via env (CORS_ALLOWED_ORIGINS), separada por
+     * virgula. NUNCA '*' (per security-conventions.md § CORS Default). O default
+     * aponta para localhost de dev — em prod a env e obrigatoria.
+     */
+    private final List<String> allowedOrigins;
+
+    public SecurityConfig(
+            @Value("${cors.allowed-origins:http://localhost:3000}") String allowedOrigins) {
+        this.allowedOrigins = Arrays.stream(allowedOrigins.split(","))
+                .map(String::trim)
+                .filter(origin -> !origin.isBlank())
+                .toList();
+    }
+
     @Bean
     public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
         http
                 .csrf(csrf -> csrf.disable())
+                .cors(Customizer.withDefaults())
                 .headers(headers -> headers
                         // HSTS aplicado a toda resposta (AC4.1 — "toda resposta").
                         // requestMatcher(any) forca o header mesmo em requisicoes nao-HTTPS
@@ -40,5 +63,23 @@ public class SecurityConfig {
                                         .STRICT_ORIGIN_WHEN_CROSS_ORIGIN)))
                 .authorizeHttpRequests(auth -> auth.anyRequest().permitAll());
         return http.build();
+    }
+
+    /**
+     * Fonte de configuracao de CORS: allowlist explicita de origens (via env),
+     * metodos e headers explicitos — nunca wildcard (AC4.2–AC4.5; PDR-0003;
+     * security-conventions.md § CORS Default e architecture-conventions.md § CORS).
+     */
+    @Bean
+    public CorsConfigurationSource corsConfigurationSource() {
+        CorsConfiguration config = new CorsConfiguration();
+        config.setAllowedOrigins(allowedOrigins);
+        config.setAllowedMethods(List.of("GET", "POST", "PUT", "DELETE"));
+        config.setAllowedHeaders(List.of("Content-Type", "Accept", "Origin"));
+        config.setMaxAge(3600L);
+
+        UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();
+        source.registerCorsConfiguration("/**", config);
+        return source;
     }
 }
