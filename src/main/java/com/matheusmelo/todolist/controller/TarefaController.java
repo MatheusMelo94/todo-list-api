@@ -2,6 +2,7 @@ package com.matheusmelo.todolist.controller;
 
 import com.matheusmelo.todolist.dto.TarefaCreateRequest;
 import com.matheusmelo.todolist.dto.TarefaResponse;
+import com.matheusmelo.todolist.dto.TarefaUpdateRequest;
 import com.matheusmelo.todolist.service.TarefaService;
 import jakarta.validation.Valid;
 import java.net.URI;
@@ -9,7 +10,9 @@ import java.util.List;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
@@ -46,5 +49,17 @@ public class TarefaController {
     @GetMapping("/{id}")
     public TarefaResponse verPorId(@PathVariable String id) {
         return service.verPorId(id);
+    }
+
+    @PutMapping("/{id}")
+    public TarefaResponse atualizar(
+            @PathVariable String id, @Valid @RequestBody TarefaUpdateRequest request) {
+        return service.atualizar(id, request);
+    }
+
+    @DeleteMapping("/{id}")
+    public ResponseEntity<Void> deletar(@PathVariable String id) {
+        service.deletar(id);
+        return ResponseEntity.noContent().build();
     }
 }
