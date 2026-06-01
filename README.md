@@ -42,6 +42,7 @@ A aplicacao sobe por padrao em `http://localhost:8080`.
 |--------------------------|-------------|----------------------------------------|---------------------------------------------|
 | `MONGODB_URI`            | Sim (prod)  | `mongodb://localhost:27017/todolist`   | URI de conexao MongoDB.                     |
 | `SPRING_PROFILES_ACTIVE` | Nao         | `local`                                | Profile ativo: `local` \| `docker` \| `prod`. |
+| `CORS_ALLOWED_ORIGINS`   | Nao         | `http://localhost:3000`                | Allowlist de origens CORS, separadas por virgula. **Nunca `*`** (PDR-0003). |
 
 No profile `prod`, `MONGODB_URI` nao tem default e deve ser fornecida pelo ambiente.
 
@@ -52,10 +53,37 @@ Base path: `/tarefas`. Sem autenticacao.
 | Metodo | Path             | Descricao                                              |
 |--------|------------------|--------------------------------------------------------|
 | POST   | `/tarefas`       | Cria uma tarefa. Retorna 201 + header `Location`.      |
-| GET    | `/tarefas`       | Lista todas as tarefas. Retorna 200 (array, ou `[]`).  |
+| GET    | `/tarefas`       | Lista paginada. `?page=` (default 0), `?size=` (default 20, max 100). Retorna 200 com envelope `PageResponse`. `page`/`size` invalidos -> 400. |
 | GET    | `/tarefas/{id}`  | Retorna a tarefa pelo id. 200, ou 404 se inexistente.  |
 | PUT    | `/tarefas/{id}`  | Substituicao completa da tarefa. 200, ou 404.          |
 | DELETE | `/tarefas/{id}`  | Deleta a tarefa pelo id. 204, ou 404 se inexistente.   |
+
+### Hardening de seguranca (spec 002)
+
+- **Headers de seguranca:** toda resposta carrega `Strict-Transport-Security`,
+  `X-Content-Type-Options: nosniff`, `X-Frame-Options: DENY` e
+  `Referrer-Policy: strict-origin-when-cross-origin` (PDR-0003). Sem CSP/Permissions-Policy
+  (API sem frontend).
+- **CORS:** allowlist explicita via `CORS_ALLOWED_ORIGINS` (nunca `*`).
+- **Rate limiting:** endpoints de escrita (`POST`/`PUT`/`DELETE` de `/tarefas`) limitados a
+  60 requisicoes por IP por 60s, por endpoint. Excedeu -> **429** (shape de erro padrao) +
+  header `Retry-After`. Leitura nao e limitada (PDR-0001 / ADR-0003).
+- **Auditoria:** cada mutacao bem-sucedida emite um log estruturado em INFO
+  (`operacao`, `tarefaId`, `outcome`, `timestamp`), sem dados sensiveis (PDR-0002).
+- **Sem autenticacao:** Spring Security entra apenas para headers + CORS; todos os
+  endpoints permanecem anonimos (Non-Goal #1).
+
+### Resposta paginada (`GET /tarefas`)
+
+```json
+{
+  "content": [ { "id": "665a...", "titulo": "Comprar leite", "descricao": "Integral", "status": "pendente", "dataCriacao": "2026-06-01T12:00:00Z" } ],
+  "page": 0,
+  "size": 20,
+  "totalElements": 1,
+  "totalPages": 1
+}
+```
 
 ### Modelo
 
@@ -97,8 +125,8 @@ curl -i -X POST http://localhost:8080/tarefas \
   -H "Content-Type: application/json" \
   -d '{"titulo":"Comprar leite","descricao":"Integral"}'
 
-# Listar
-curl http://localhost:8080/tarefas
+# Listar (paginado)
+curl "http://localhost:8080/tarefas?page=0&size=20"
 
 # Ver por id
 curl http://localhost:8080/tarefas/SEU_ID_AQUI
@@ -114,8 +142,11 @@ curl -i -X DELETE http://localhost:8080/tarefas/SEU_ID_AQUI
 
 ## Documentacao
 
-- ADRs: [`docs/adr/`](docs/adr/)
-- Spec / plano / tasks: [`specs/001-crud-tarefas/`](specs/001-crud-tarefas/)
+- ADRs: [`docs/adr/`](docs/adr/) — inclui ADR-0003 (Bucket4j) e ADR-0004 (`PageResponse`).
+- PDRs: [`docs/pdr/`](docs/pdr/) — 0001 (rate limiting), 0002 (auditoria), 0003 (headers/CORS), 0004 (paginacao).
+- Spec / plano / tasks:
+  [`specs/001-crud-tarefas/`](specs/001-crud-tarefas/),
+  [`specs/002-hardening-seguranca/`](specs/002-hardening-seguranca/)
 
 > Dockerfile, docker-compose, `run-local.sh` e CI sao dominio do DevOps Engineer,
 > fora do escopo desta feature (ver plano OQ-3).
