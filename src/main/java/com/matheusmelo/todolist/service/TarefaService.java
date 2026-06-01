@@ -1,5 +1,6 @@
 package com.matheusmelo.todolist.service;
 
+import com.matheusmelo.todolist.dto.PageResponse;
 import com.matheusmelo.todolist.dto.TarefaCreateRequest;
 import com.matheusmelo.todolist.dto.TarefaResponse;
 import com.matheusmelo.todolist.dto.TarefaUpdateRequest;
@@ -10,6 +11,8 @@ import com.matheusmelo.todolist.model.Tarefa;
 import com.matheusmelo.todolist.repository.TarefaRepository;
 import java.time.Instant;
 import java.util.List;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 
 /**
@@ -18,6 +21,11 @@ import org.springframework.stereotype.Service;
  */
 @Service
 public class TarefaService {
+
+    /** Defaults e teto de paginacao (spec 002 AC2.1/AC2.3; PDR-0004). */
+    static final int PAGE_DEFAULT = 0;
+    static final int SIZE_DEFAULT = 20;
+    static final int SIZE_MAXIMO = 100;
 
     private final TarefaRepository repository;
     private final TarefaMapper mapper;
@@ -42,11 +50,34 @@ public class TarefaService {
         return mapper.toResponse(salva);
     }
 
-    /** Lista todas as tarefas; lista vazia quando nao ha dados (AC2.2). */
+    /**
+     * Lista tarefas paginadas (spec 002 AC2.x; PDR-0004; ADR-0004). Aplica
+     * defaults (page 0, size 20) e teto de size 100; colecao vazia retorna pagina
+     * vazia (nao erro). Retorna o envelope {@link PageResponse} (nunca o Page).
+     */
+    public PageResponse<TarefaResponse> listar(Pageable pageable) {
+        return mapper.toPageResponse(repository.findAll(normalizar(pageable)));
+    }
+
+    /**
+     * Lista nao-paginada (contrato legado spec 001). Mantida apenas como ponte ate
+     * o controller migrar para o contrato paginado (T-PG-04), quando sera removida.
+     *
+     * @deprecated use {@link #listar(Pageable)} (PDR-0004 / ADR-0004).
+     */
+    @Deprecated
     public List<TarefaResponse> listar() {
         return repository.findAll().stream()
                 .map(mapper::toResponse)
                 .toList();
+    }
+
+    /** Aplica defaults (page 0, size 20) e clamp de size em {@value #SIZE_MAXIMO}. */
+    private Pageable normalizar(Pageable pageable) {
+        int page = pageable.isPaged() ? pageable.getPageNumber() : PAGE_DEFAULT;
+        int size = pageable.isPaged() ? pageable.getPageSize() : SIZE_DEFAULT;
+        int sizeEfetivo = Math.min(Math.max(size, 1), SIZE_MAXIMO);
+        return PageRequest.of(page, sizeEfetivo);
     }
 
     /** Retorna a tarefa por id ou lanca ResourceNotFoundException (AC3.2). */
