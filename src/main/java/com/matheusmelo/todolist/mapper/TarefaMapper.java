@@ -1,9 +1,12 @@
 package com.matheusmelo.todolist.mapper;
 
+import com.matheusmelo.todolist.dto.PageResponse;
 import com.matheusmelo.todolist.dto.TarefaCreateRequest;
 import com.matheusmelo.todolist.dto.TarefaResponse;
 import com.matheusmelo.todolist.dto.TarefaUpdateRequest;
 import com.matheusmelo.todolist.model.Tarefa;
+import java.util.List;
+import org.springframework.data.domain.Page;
 import org.springframework.stereotype.Component;
 
 /**
@@ -42,5 +45,22 @@ public class TarefaMapper {
                 tarefa.getDescricao(),
                 tarefa.getStatus(),
                 tarefa.getDataCriacao());
+    }
+
+    /**
+     * Mapeia o {@link Page} do repositorio para o envelope {@link PageResponse}
+     * (ADR-0004): content via {@link #toResponse}, metadados do Page. Nunca expoe
+     * o Page na borda da API (§ Layer Rules).
+     */
+    public PageResponse<TarefaResponse> toPageResponse(Page<Tarefa> page) {
+        List<TarefaResponse> content = page.getContent().stream()
+                .map(this::toResponse)
+                .toList();
+        return new PageResponse<>(
+                content,
+                page.getNumber(),
+                page.getSize(),
+                page.getTotalElements(),
+                page.getTotalPages());
     }
 }

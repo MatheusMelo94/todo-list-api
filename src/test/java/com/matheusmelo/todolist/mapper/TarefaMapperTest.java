@@ -81,4 +81,32 @@ class TarefaMapperTest {
         assertThat(resp.status()).isEqualTo(StatusTarefa.CONCLUIDA);
         assertThat(resp.dataCriacao()).isEqualTo(criacao);
     }
+
+    @Test
+    void toPageResponseMapeiaContentEMetadados() {
+        Tarefa t1 = new Tarefa();
+        t1.setId("id1");
+        t1.setTitulo("t1");
+        t1.setStatus(StatusTarefa.PENDENTE);
+        Tarefa t2 = new Tarefa();
+        t2.setId("id2");
+        t2.setTitulo("t2");
+        t2.setStatus(StatusTarefa.PENDENTE);
+
+        var pageable = org.springframework.data.domain.PageRequest.of(1, 2);
+        org.springframework.data.domain.Page<Tarefa> page =
+                new org.springframework.data.domain.PageImpl<>(
+                        java.util.List.of(t1, t2), pageable, 6L);
+
+        com.matheusmelo.todolist.dto.PageResponse<TarefaResponse> resp =
+                mapper.toPageResponse(page);
+
+        assertThat(resp.content()).hasSize(2);
+        assertThat(resp.content().get(0).id()).isEqualTo("id1");
+        assertThat(resp.content().get(1).id()).isEqualTo("id2");
+        assertThat(resp.page()).isEqualTo(1);
+        assertThat(resp.size()).isEqualTo(2);
+        assertThat(resp.totalElements()).isEqualTo(6L);
+        assertThat(resp.totalPages()).isEqualTo(3);
+    }
 }
