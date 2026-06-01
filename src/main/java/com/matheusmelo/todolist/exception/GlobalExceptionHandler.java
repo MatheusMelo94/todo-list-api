@@ -48,6 +48,20 @@ public class GlobalExceptionHandler {
         return build(HttpStatus.NOT_FOUND, ex.getMessage(), request);
     }
 
+    /**
+     * Fallback para qualquer excecao nao mapeada (per § Error Handling — mensagens
+     * de erro ao cliente sem internals; § Logging — detalhe real apenas no servidor).
+     * Retorna 500 no shape {@link ErrorResponse} com mensagem generica; o detalhe da
+     * excecao e logado via {@code log.error} e nunca exposto na resposta. Remedia
+     * F-0001 (security-findings-001.md).
+     */
+    @ExceptionHandler(Exception.class)
+    public ResponseEntity<ErrorResponse> handleUnexpected(
+            Exception ex, HttpServletRequest request) {
+        log.error("Erro interno nao tratado em {}", request.getRequestURI(), ex);
+        return build(HttpStatus.INTERNAL_SERVER_ERROR, "Erro interno do servidor", request);
+    }
+
     private ResponseEntity<ErrorResponse> build(
             HttpStatus status, String message, HttpServletRequest request) {
         ErrorResponse body = new ErrorResponse(

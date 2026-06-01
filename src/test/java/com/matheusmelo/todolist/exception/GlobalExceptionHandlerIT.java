@@ -43,6 +43,11 @@ class GlobalExceptionHandlerIT extends AbstractMongoIntegrationTest {
         public String ausente() {
             throw new ResourceNotFoundException("Tarefa nao encontrada");
         }
+
+        @GetMapping("/inesperado")
+        public String inesperado() {
+            throw new IllegalStateException("detalhe interno sensivel: conexao mongo falhou");
+        }
     }
 
     @Test
@@ -79,6 +84,32 @@ class GlobalExceptionHandlerIT extends AbstractMongoIntegrationTest {
                 .andExpect(jsonPath("$.error").value("Not Found"))
                 .andExpect(jsonPath("$.message").value("Tarefa nao encontrada"))
                 .andExpect(jsonPath("$.path").value("/stub/ausente"));
+    }
+
+    @Test
+    void excecaoNaoMapeadaRetornaCorpoCompleto500ComMensagemGenerica() throws Exception {
+        mockMvc.perform(get("/stub/inesperado"))
+                .andExpect(status().isInternalServerError())
+                .andExpect(jsonPath("$.timestamp").exists())
+                .andExpect(jsonPath("$.status").value(500))
+                .andExpect(jsonPath("$.error").value("Internal Server Error"))
+                .andExpect(jsonPath("$.message").value("Erro interno do servidor"))
+                .andExpect(jsonPath("$.path").value("/stub/inesperado"));
+    }
+
+    @Test
+    void respostaDe500NaoVazaDetalheDaExcecao() throws Exception {
+        var resultado = mockMvc.perform(get("/stub/inesperado"))
+                .andExpect(status().isInternalServerError())
+                .andReturn();
+        String body = resultado.getResponse().getContentAsString();
+        org.assertj.core.api.Assertions.assertThat(body)
+                .doesNotContain("Exception")
+                .doesNotContain("IllegalState")
+                .doesNotContain("detalhe interno sensivel")
+                .doesNotContain("mongo")
+                .doesNotContain("at com.")
+                .doesNotContain("trace");
     }
 
     @Test
