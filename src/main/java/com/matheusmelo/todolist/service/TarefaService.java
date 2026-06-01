@@ -21,10 +21,13 @@ public class TarefaService {
 
     private final TarefaRepository repository;
     private final TarefaMapper mapper;
+    private final AuditoriaLogger auditoriaLogger;
 
-    public TarefaService(TarefaRepository repository, TarefaMapper mapper) {
+    public TarefaService(
+            TarefaRepository repository, TarefaMapper mapper, AuditoriaLogger auditoriaLogger) {
         this.repository = repository;
         this.mapper = mapper;
+        this.auditoriaLogger = auditoriaLogger;
     }
 
     /** Cria uma tarefa: gera dataCriacao e aplica status default PENDENTE se nulo (AC1.1, AC1.4). */
@@ -34,7 +37,9 @@ public class TarefaService {
             tarefa.setStatus(StatusTarefa.PENDENTE);
         }
         tarefa.setDataCriacao(Instant.now());
-        return mapper.toResponse(repository.save(tarefa));
+        Tarefa salva = repository.save(tarefa);
+        auditoriaLogger.registrar("create", salva.getId());
+        return mapper.toResponse(salva);
     }
 
     /** Lista todas as tarefas; lista vazia quando nao ha dados (AC2.2). */

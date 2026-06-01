@@ -23,7 +23,8 @@ class TarefaServiceDeletarTest {
     @BeforeEach
     void setUp() {
         repository = Mockito.mock(TarefaRepository.class);
-        service = new TarefaService(repository, new TarefaMapper());
+        service = new TarefaService(
+                repository, new TarefaMapper(), Mockito.mock(AuditoriaLogger.class));
     }
 
     @Test
