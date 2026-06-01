@@ -63,7 +63,9 @@ public class TarefaService {
     public TarefaResponse atualizar(String id, TarefaUpdateRequest request) {
         Tarefa tarefa = buscarOuFalhar(id);
         mapper.applyUpdate(tarefa, request);
-        return mapper.toResponse(repository.save(tarefa));
+        Tarefa salva = repository.save(tarefa);
+        auditoriaLogger.registrar("update", salva.getId());
+        return mapper.toResponse(salva);
     }
 
     /** Deleta a tarefa por id (AC5.1); id inexistente -> ResourceNotFoundException (AC5.2). */
@@ -72,6 +74,7 @@ public class TarefaService {
             throw new ResourceNotFoundException("Tarefa nao encontrada");
         }
         repository.deleteById(id);
+        auditoriaLogger.registrar("delete", id);
     }
 
     private Tarefa buscarOuFalhar(String id) {
