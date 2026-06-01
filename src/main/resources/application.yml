@@ -1,0 +1,33 @@
+spring:
+  application:
+    name: todo-list-api
+  data:
+    mongodb:
+      uri: ${MONGODB_URI:mongodb://localhost:27017/todolist}
+
+---
+spring:
+  config:
+    activate:
+      on-profile: local
+  data:
+    mongodb:
+      uri: ${MONGODB_URI:mongodb://localhost:27017/todolist}
+
+---
+spring:
+  config:
+    activate:
+      on-profile: docker
+  data:
+    mongodb:
+      uri: ${MONGODB_URI:mongodb://mongo:27017/todolist}
+
+---
+spring:
+  config:
+    activate:
+      on-profile: prod
+  data:
+    mongodb:
+      uri: ${MONGODB_URI}
