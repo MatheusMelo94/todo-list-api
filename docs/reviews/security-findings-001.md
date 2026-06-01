@@ -45,7 +45,7 @@ Per `security-conventions.md` § Project Posture → **Prototype bloqueia apenas
 - **OWASP Top 10:2025:** A05 — Security Misconfiguration / A04 — Insecure Design (parcial)
 - **Framework citation(s):** WSTG-ERRH-01/02, API Top 10 API8 (Security Misconfiguration), ASVS V7.4
 - **Affected component:** Backend — `exception/GlobalExceptionHandler.java` (cobre apenas `MethodArgumentNotValidException`, `HttpMessageNotReadableException`, `ResourceNotFoundException`)
-- **Status:** Open
+- **Status:** Resolved (2026-06-01) — fallback `@ExceptionHandler(Exception.class)` (500, shape `ErrorResponse`, mensagem genérica, detalhe só em `log.error`) + flags `server.error.*` fixadas em `application.yml`; cobertura por `GlobalExceptionHandlerIT`. Commit `fcfae00`.
 - **Posture:** Prototype
 - **Blocking at this posture:** No
 
@@ -296,7 +296,7 @@ Nenhuma agora. Per `security-build-vs-buy.md`: ao ir para MVP/produção, migrar
 
 **Achados bloqueadores em aberto:** Nenhum.
 
-**Itens de risco — decisão do usuário (2026-06-01): NÃO aceitos.** F-0002, F-0003, F-0006, F-0007 ficam como **pendências abertas (TODO), a remediar antes de qualquer deploy público** (risco recusado, não diferido por aceite). F-0001 é correção barata recomendada mesmo em Prototype (não bloqueante).
+**Itens de risco — decisão do usuário (2026-06-01): NÃO aceitos.** F-0002, F-0003, F-0006, F-0007 ficam como **pendências abertas (TODO), a remediar antes de qualquer deploy público** (risco recusado, não diferido por aceite). F-0001 foi **Resolved (2026-06-01)** — correção barata aplicada (commit `fcfae00`).
 
 ### Veredito (posture Prototype)
 
