@@ -10,7 +10,6 @@ import com.matheusmelo.todolist.model.StatusTarefa;
 import com.matheusmelo.todolist.model.Tarefa;
 import com.matheusmelo.todolist.repository.TarefaRepository;
 import java.time.Instant;
-import java.util.List;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
@@ -57,19 +56,6 @@ public class TarefaService {
      */
     public PageResponse<TarefaResponse> listar(Pageable pageable) {
         return mapper.toPageResponse(repository.findAll(normalizar(pageable)));
-    }
-
-    /**
-     * Lista nao-paginada (contrato legado spec 001). Mantida apenas como ponte ate
-     * o controller migrar para o contrato paginado (T-PG-04), quando sera removida.
-     *
-     * @deprecated use {@link #listar(Pageable)} (PDR-0004 / ADR-0004).
-     */
-    @Deprecated
-    public List<TarefaResponse> listar() {
-        return repository.findAll().stream()
-                .map(mapper::toResponse)
-                .toList();
     }
 
     /** Aplica defaults (page 0, size 20) e clamp de size em {@value #SIZE_MAXIMO}. */

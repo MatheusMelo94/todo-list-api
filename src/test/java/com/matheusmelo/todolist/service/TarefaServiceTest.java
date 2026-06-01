@@ -57,9 +57,11 @@ class TarefaServiceTest {
     }
 
     @Test
-    void listarSemDadosRetornaListaVazia() {
-        when(repository.findAll()).thenReturn(List.of());
-        assertThat(service.listar()).isEmpty();
+    void listarSemDadosRetornaPaginaVazia() {
+        when(repository.findAll(org.mockito.ArgumentMatchers.<org.springframework.data.domain.Pageable>any()))
+                .thenReturn(new org.springframework.data.domain.PageImpl<>(List.of()));
+        assertThat(service.listar(org.springframework.data.domain.PageRequest.of(0, 20))
+                .content()).isEmpty();
     }
 
     @Test
@@ -68,12 +70,13 @@ class TarefaServiceTest {
         t.setId("id1");
         t.setTitulo("titulo");
         t.setStatus(StatusTarefa.PENDENTE);
-        when(repository.findAll()).thenReturn(List.of(t));
+        when(repository.findAll(org.mockito.ArgumentMatchers.<org.springframework.data.domain.Pageable>any()))
+                .thenReturn(new org.springframework.data.domain.PageImpl<>(List.of(t)));
 
-        var resultado = service.listar();
+        var resultado = service.listar(org.springframework.data.domain.PageRequest.of(0, 20));
 
-        assertThat(resultado).hasSize(1);
-        assertThat(resultado.get(0).id()).isEqualTo("id1");
+        assertThat(resultado.content()).hasSize(1);
+        assertThat(resultado.content().get(0).id()).isEqualTo("id1");
     }
 
     @Test
