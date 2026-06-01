@@ -1,13 +1,16 @@
 package com.matheusmelo.todolist.controller;
 
+import com.matheusmelo.todolist.dto.PageResponse;
 import com.matheusmelo.todolist.dto.TarefaCreateRequest;
 import com.matheusmelo.todolist.dto.TarefaResponse;
 import com.matheusmelo.todolist.dto.TarefaUpdateRequest;
 import com.matheusmelo.todolist.service.TarefaService;
 import jakarta.validation.Valid;
+import jakarta.validation.constraints.Min;
 import java.net.URI;
-import java.util.List;
+import org.springframework.data.domain.PageRequest;
 import org.springframework.http.ResponseEntity;
+import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.DeleteMapping;
@@ -15,6 +18,7 @@ import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.util.UriComponentsBuilder;
 
@@ -25,6 +29,7 @@ import org.springframework.web.util.UriComponentsBuilder;
  */
 @RestController
 @RequestMapping("/tarefas")
+@Validated
 public class TarefaController {
 
     private final TarefaService service;
@@ -41,9 +46,18 @@ public class TarefaController {
         return ResponseEntity.created(location).body(criada);
     }
 
+    /**
+     * Lista paginada (PDR-0004 / ADR-0004). page >= 0, size >= 1; o teto de size
+     * (100) e aplicado no service. page/size invalidos -> 400 no shape padrao
+     * (ConstraintViolation / TypeMismatch tratados no GlobalExceptionHandler).
+     */
     @GetMapping
-    public List<TarefaResponse> listar() {
-        return service.listar();
+    public PageResponse<TarefaResponse> listar(
+            @RequestParam(defaultValue = "0") @Min(value = 0, message = "page deve ser >= 0")
+                    int page,
+            @RequestParam(defaultValue = "20") @Min(value = 1, message = "size deve ser >= 1")
+                    int size) {
+        return service.listar(PageRequest.of(page, size));
     }
 
     @GetMapping("/{id}")

@@ -2,6 +2,8 @@ package com.matheusmelo.todolist.exception;
 
 import com.matheusmelo.todolist.dto.ErrorResponse;
 import jakarta.servlet.http.HttpServletRequest;
+import jakarta.validation.ConstraintViolation;
+import jakarta.validation.ConstraintViolationException;
 import java.time.Instant;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -12,6 +14,7 @@ import org.springframework.validation.FieldError;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
+import org.springframework.web.method.annotation.MethodArgumentTypeMismatchException;
 
 /**
  * Handler global de excecoes (per architecture-conventions.md § Error Handling):
@@ -31,6 +34,33 @@ public class GlobalExceptionHandler {
                 .map(FieldError::getDefaultMessage)
                 .orElse("requisicao invalida");
         log.warn("Validacao falhou em {}: {}", request.getRequestURI(), message);
+        return build(HttpStatus.BAD_REQUEST, message, request);
+    }
+
+    /**
+     * Violacao de @Min em parametros de paginacao (page/size) — spec 002 AC2.5.
+     * A {@code message} indica o parametro invalido; 400 no shape padrao.
+     */
+    @ExceptionHandler(ConstraintViolationException.class)
+    public ResponseEntity<ErrorResponse> handleConstraintViolation(
+            ConstraintViolationException ex, HttpServletRequest request) {
+        String message = ex.getConstraintViolations().stream()
+                .findFirst()
+                .map(ConstraintViolation::getMessage)
+                .orElse("parametro invalido");
+        log.warn("Parametro invalido em {}: {}", request.getRequestURI(), message);
+        return build(HttpStatus.BAD_REQUEST, message, request);
+    }
+
+    /**
+     * Tipo incompativel em parametro (ex.: size=abc) — spec 002 AC2.5. A
+     * {@code message} nomeia o parametro; 400 no shape padrao, sem internals.
+     */
+    @ExceptionHandler(MethodArgumentTypeMismatchException.class)
+    public ResponseEntity<ErrorResponse> handleTypeMismatch(
+            MethodArgumentTypeMismatchException ex, HttpServletRequest request) {
+        String message = "parametro " + ex.getName() + " invalido";
+        log.warn("Tipo invalido em {}: {}", request.getRequestURI(), message);
         return build(HttpStatus.BAD_REQUEST, message, request);
     }
 

@@ -62,20 +62,25 @@ class TarefaControllerPostGetIT extends AbstractMongoIntegrationTest {
     }
 
     @Test
-    void getListaVaziaRetorna200ArrayVazio() throws Exception {
+    void getListaVaziaRetorna200PageResponseVazio() throws Exception {
+        // Contrato paginado (ADR-0004 / spec 002 AC2.4): array -> $.content vazio.
         mockMvc.perform(get("/tarefas"))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$").isArray())
-                .andExpect(jsonPath("$.length()").value(0));
+                .andExpect(jsonPath("$.content").isArray())
+                .andExpect(jsonPath("$.content.length()").value(0))
+                .andExpect(jsonPath("$.totalElements").value(0));
     }
 
     @Test
     void getListaRetornaTarefas() throws Exception {
+        // Contrato paginado (ADR-0004 / spec 002 AC2.1): $[0] -> $.content[0].
         criarTarefa("{\"titulo\":\"t1\"}");
         mockMvc.perform(get("/tarefas"))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$.length()").value(1))
-                .andExpect(jsonPath("$[0].titulo").value("t1"));
+                .andExpect(jsonPath("$.content.length()").value(1))
+                .andExpect(jsonPath("$.content[0].titulo").value("t1"))
+                .andExpect(jsonPath("$.totalElements").value(1))
+                .andExpect(jsonPath("$.totalPages").value(1));
     }
 
     @Test

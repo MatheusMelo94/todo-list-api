@@ -49,10 +49,12 @@ class TarefaControllerBoundaryIT extends AbstractMongoIntegrationTest {
     }
 
     private long contar() throws Exception {
+        // Contrato paginado (ADR-0004): le $.content em vez do array raiz.
         MvcResult res = mockMvc.perform(get("/tarefas"))
                 .andExpect(status().isOk())
                 .andReturn();
-        java.util.List<?> lista = com.jayway.jsonpath.JsonPath.read(res.getResponse().getContentAsString(), "$");
+        java.util.List<?> lista = com.jayway.jsonpath.JsonPath.read(
+                res.getResponse().getContentAsString(), "$.content");
         return lista.size();
     }
 

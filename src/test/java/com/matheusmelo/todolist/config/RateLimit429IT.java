@@ -122,11 +122,11 @@ class RateLimit429IT extends AbstractMongoIntegrationTest {
                         .content("{\"titulo\":\"excedente\"}"))
                 .andExpect(status().isTooManyRequests());
 
-        // Total de tarefas continua 60 (a barrada nao persistiu).
-        // NOTA: GET /tarefas ainda retorna array ate T-PG-04; T-REG-01 ajusta este IT.
+        // Total de tarefas continua 60 (a barrada nao persistiu). Contrato paginado
+        // (ADR-0004): le totalElements.
         mockMvc.perform(get("/tarefas").with(comIp(IP_NO_MUTATION)))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$.length()").value(60));
+                .andExpect(jsonPath("$.totalElements").value(60));
     }
 
     @Test
