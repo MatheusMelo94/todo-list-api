@@ -1,0 +1,53 @@
+# render.yaml — Blueprint (IaC) do Render para todo-list-api.
+#
+# Per architecture-conventions.md § Multi-target Deployment (cloud deploy config
+# obrigatorio) e devops-conventions.md § Project Setup (render.yaml na raiz) +
+# § Scope Posture (PaaS small-scale: 1 web service, sem K8s/IaC de plataforma).
+#
+# Posture Prototype (memory/constitution.md v2): escopo enxuto — apenas o web
+# service. MongoDB NAO e gerenciado pelo Render; usa-se MongoDB Atlas (free tier)
+# externo, conforme architecture-conventions.md § Stack Baseline ("MongoDB (Atlas
+# for cloud)"). A connection string entra como SECRET no painel (sync: false),
+# nunca versionada (devops-conventions.md § Secrets Integration).
+services:
+  - type: web
+    name: todo-list-api
+    runtime: docker
+    repo: https://github.com/MatheusMelo94/todo-list-api
+    branch: main
+    dockerfilePath: ./Dockerfile
+    plan: free
+    region: oregon
+    autoDeploy: true
+
+    # Health check do Render. O Actuator expoe SOMENTE /actuator/health
+    # (application.yml § management; pom.xml traz spring-boot-starter-actuator).
+    # O Render bate aqui para considerar o servico saudavel antes de rotear.
+    healthCheckPath: /actuator/health
+
+    envVars:
+      # Profile prod: MONGODB_URI sem default, server.port=${PORT:8080}.
+      - key: SPRING_PROFILES_ACTIVE
+        value: prod
+
+      # Connection string do MongoDB Atlas. SECRET — sync:false faz o Render
+      # NAO versionar o valor no blueprint; voce o define no painel/Environment
+      # do servico (Settings > Environment). NUNCA commitar a string real.
+      - key: MONGODB_URI
+        sync: false
+
+      # Allowlist de CORS (PDR-0003). NUNCA '*'. sync:false: defina no painel
+      # com a(s) origem(ns) do seu frontend (ex.: https://app.exemplo.com).
+      # Se ainda nao houver frontend publicado, defina um placeholder explicito
+      # (uma origem que voce controle) — nunca '*'.
+      - key: CORS_ALLOWED_ORIGINS
+        sync: false
+
+      # Heap conservador para o plano free do Render (512 MB RAM). Opcional;
+      # ajuste/remova conforme necessidade. Lido pelo ENTRYPOINT (sh -c exec
+      # java $JAVA_OPTS -jar app.jar).
+      - key: JAVA_OPTS
+        value: -XX:MaxRAMPercentage=75.0
+
+    # PORT e injetada automaticamente pelo Render no runtime; o profile prod
+    # honra ${PORT:8080}. Nao a declare aqui (o Render a gerencia).

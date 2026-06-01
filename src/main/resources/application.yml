@@ -21,6 +21,20 @@ server:
     include-message: never
     include-exception: false
 
+# Actuator restrito ao health endpoint (deploy em PaaS — Render health check).
+# Expoe SOMENTE 'health'; nenhum endpoint sensivel (env, beans, mappings,
+# heapdump) e publicado. show-details=never para nao vazar detalhes de
+# infra a clientes anonimos (API sem auth — Non-Goal #1), per
+# architecture-conventions.md § Error Handling ("sem internals ao cliente").
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health
+  endpoint:
+    health:
+      show-details: never
+
 ---
 spring:
   config:
@@ -47,3 +61,10 @@ spring:
   data:
     mongodb:
       uri: ${MONGODB_URI}
+# PaaS (Render) injeta a porta de bind via env PORT; honra-la e obrigatorio
+# para o health check / roteamento do Render funcionarem. Default 8080 mantem
+# paridade com local/docker. Apenas o profile prod le PORT — local/docker
+# herdam o default 8080 do servidor embutido (per devops-conventions.md
+# § Dockerfile Baseline: "Port: from env var, defaults to 8080").
+server:
+  port: ${PORT:8080}

@@ -1,0 +1,28 @@
+# .dockerignore — mantem o contexto de build enxuto e evita vazar artefatos.
+# Per devops-conventions.md § Dockerfile Baseline ("sem segredos embutidos").
+
+# Build local (a imagem compila do zero no estagio de build)
+target/
+
+# Segredos e env locais — NUNCA entram no contexto/imagem
+.env
+.env.*
+!.env.example
+
+# Git / CI / docs (irrelevantes para o build da imagem)
+.git/
+.github/
+docs/
+specs/
+memory/
+*.md
+!README.md
+
+# IDE / OS
+.idea/
+*.iml
+.vscode/
+.settings/
+.classpath
+.project
+.DS_Store
