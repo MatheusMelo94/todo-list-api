@@ -34,6 +34,16 @@
             <groupId>org.springframework.boot</groupId>
             <artifactId>spring-boot-starter-validation</artifactId>
         </dependency>
+        <!-- Actuator: APENAS para o health endpoint exigido pelo deploy em PaaS
+             (per devops-conventions.md § Dockerfile Baseline, que assume
+             /actuator/health). Exposicao restrita a "health" via
+             management.endpoints.web.exposure.include no application.yml. Adicao
+             pequena, sem observabilidade pesada (constitution.md v2 § Constraints
+             mantem vendor/APM fora de escopo). -->
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-actuator</artifactId>
+        </dependency>
         <!-- Spring Security: APENAS para headers de seguranca + CORS (PDR-0003).
              Security ja consta em architecture-conventions.md § Stack Baseline,
              portanto nao exige ADR. SecurityConfig (T-HDR-02) restaura acesso

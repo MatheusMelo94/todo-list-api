@@ -140,6 +140,79 @@ curl -i -X PUT http://localhost:8080/tarefas/SEU_ID_AQUI \
 curl -i -X DELETE http://localhost:8080/tarefas/SEU_ID_AQUI
 ```
 
+## Deploy no Render
+
+O projeto deploya como **web service Docker** no [Render](https://render.com), com
+**MongoDB Atlas** (free tier) como banco de producao. O Render NAO oferece MongoDB
+gerenciado, por isso o Mongo e externo (Atlas), conforme stack baseline do time.
+
+Artefatos de deploy (dominio do DevOps Engineer):
+[`Dockerfile`](Dockerfile) (multi-stage, nao-root, honra `PORT`),
+[`render.yaml`](render.yaml) (Blueprint/IaC) e [`.dockerignore`](.dockerignore).
+
+> **Aviso de seguranca:** a API nao tem autenticacao (Non-Goal #1). Deployar no
+> Render a torna **publicamente acessivel sem auth** — qualquer um com a URL pode
+> criar/editar/deletar tarefas. Ha hardening in-app (rate limiting, headers, CORS
+> allowlist), mas a exposicao publica e uma decisao sua. Mantenha `CORS_ALLOWED_ORIGINS`
+> restrito (nunca `*`) e considere aceitar esse risco formalmente antes do deploy.
+
+### 1. Criar o cluster no MongoDB Atlas
+
+1. Crie uma conta em [mongodb.com/atlas](https://www.mongodb.com/atlas) e um cluster
+   **M0 (free tier)**.
+2. Em **Database Access**, crie um usuario de banco (usuario + senha).
+3. Em **Network Access**, libere o acesso. Como o IP de saida do Render no plano free
+   nao e fixo, a opcao pragmatica para Prototype e permitir `0.0.0.0/0` (qualquer IP).
+   O acesso ainda exige usuario/senha; ciente do trade-off, restrinja quando possivel.
+4. Em **Connect > Drivers**, copie a connection string (formato `mongodb+srv://...`)
+   e substitua usuario/senha. Acrescente o nome do banco (ex.: `/todolist`).
+   Essa string e a sua `MONGODB_URI` de producao — trate como **secret**.
+
+### 2. Conectar o repositorio e criar o servico no Render
+
+Opcao A — **Blueprint (recomendado, usa `render.yaml`):**
+1. No Render, **New > Blueprint** e conecte o repo `MatheusMelo94/todo-list-api`.
+2. O Render le `render.yaml` e cria o web service `todo-list-api` (Docker, branch
+   `main`, plano free, health check `/actuator/health`).
+
+Opcao B — **Manual:** New > Web Service > conecte o repo > Runtime **Docker** >
+branch `main` > plano **Free** > Health Check Path `/actuator/health`.
+
+### 3. Configurar as variaveis de ambiente (secrets) no painel
+
+Em **Settings > Environment** do servico, defina as vars marcadas `sync: false`
+(o Render NAO as versiona no blueprint). NUNCA commite esses valores:
+
+| Variavel               | Valor                                                        |
+|------------------------|-------------------------------------------------------------|
+| `MONGODB_URI`          | connection string do Atlas (`mongodb+srv://...`) — **secret** |
+| `CORS_ALLOWED_ORIGINS` | origem(ns) reais do seu frontend (ex.: `https://app.exemplo.com`). **Nunca `*`** |
+
+`SPRING_PROFILES_ACTIVE=prod` e `JAVA_OPTS` ja vem do `render.yaml`. A `PORT` e
+injetada automaticamente pelo Render e o profile `prod` a honra (`server.port=${PORT:8080}`).
+
+### 4. Deploy e URL publica
+
+1. Salve as env vars; o Render dispara o build (Docker) e o deploy automaticamente.
+   Com `autoDeploy: true`, cada push em `main` redeploya.
+2. Acompanhe em **Logs**. O servico fica saudavel quando `/actuator/health` responde 200.
+3. A **URL publica** aparece no topo da pagina do servico, no formato
+   `https://todo-list-api-XXXX.onrender.com`. Teste:
+
+   ```bash
+   curl https://todo-list-api-XXXX.onrender.com/actuator/health
+   curl "https://todo-list-api-XXXX.onrender.com/tarefas?page=0&size=20"
+   ```
+
+> Nota plano free: o servico hiberna apos inatividade; a primeira requisicao depois
+> de hibernar pode levar dezenas de segundos (cold start).
+
+### Rollback
+
+O Render mantem o historico de deploys. Para reverter: pagina do servico >
+**Deploys** > selecione o ultimo deploy bom (last-known-good) > **Rollback**.
+Tempo-alvo < 5 min (devops-conventions.md § Rollback Policy).
+
 ## Documentacao
 
 - ADRs: [`docs/adr/`](docs/adr/) — inclui ADR-0003 (Bucket4j) e ADR-0004 (`PageResponse`).
