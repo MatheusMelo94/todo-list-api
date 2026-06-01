@@ -1,0 +1,8 @@
+# Configuracao de testes (T04) — Mongo embedded via flapdoodle (OQ-2 Resolved).
+# Define a versao do MongoDB embedded exigida pela autoconfiguracao do
+# flapdoodle spring3x. Sem Docker, sem URI dinamica (ADR-0002).
+de:
+  flapdoodle:
+    mongodb:
+      embedded:
+        version: 7.0.14
