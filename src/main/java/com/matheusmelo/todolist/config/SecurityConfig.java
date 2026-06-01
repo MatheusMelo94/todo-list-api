@@ -8,6 +8,7 @@ import org.springframework.context.annotation.Configuration;
 import org.springframework.security.config.Customizer;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.web.SecurityFilterChain;
+import org.springframework.security.web.header.HeaderWriterFilter;
 import org.springframework.security.web.header.writers.ReferrerPolicyHeaderWriter;
 import org.springframework.web.cors.CorsConfiguration;
 import org.springframework.web.cors.CorsConfigurationSource;
@@ -41,10 +42,20 @@ public class SecurityConfig {
     }
 
     @Bean
-    public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
+    public RateLimitFilter rateLimitFilter(
+            RateLimitConfig rateLimitConfig, RateLimitResponseWriter responseWriter) {
+        return new RateLimitFilter(rateLimitConfig, responseWriter);
+    }
+
+    @Bean
+    public SecurityFilterChain securityFilterChain(
+            HttpSecurity http, RateLimitFilter rateLimitFilter) throws Exception {
         http
                 .csrf(csrf -> csrf.disable())
                 .cors(Customizer.withDefaults())
+                // RateLimitFilter apos o HeaderWriterFilter: respostas 429 carregam
+                // os headers de seguranca (AC4.1 — toda resposta).
+                .addFilterAfter(rateLimitFilter, HeaderWriterFilter.class)
                 .headers(headers -> headers
                         // HSTS aplicado a toda resposta (AC4.1 — "toda resposta").
                         // requestMatcher(any) forca o header mesmo em requisicoes nao-HTTPS
