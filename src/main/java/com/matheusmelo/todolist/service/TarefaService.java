@@ -2,6 +2,7 @@ package com.matheusmelo.todolist.service;
 
 import com.matheusmelo.todolist.dto.TarefaCreateRequest;
 import com.matheusmelo.todolist.dto.TarefaResponse;
+import com.matheusmelo.todolist.dto.TarefaUpdateRequest;
 import com.matheusmelo.todolist.exception.ResourceNotFoundException;
 import com.matheusmelo.todolist.mapper.TarefaMapper;
 import com.matheusmelo.todolist.model.StatusTarefa;
@@ -46,6 +47,18 @@ public class TarefaService {
     /** Retorna a tarefa por id ou lanca ResourceNotFoundException (AC3.2). */
     public TarefaResponse verPorId(String id) {
         return mapper.toResponse(buscarOuFalhar(id));
+    }
+
+    /**
+     * Substituicao completa (PUT, AC4.1/AC4.7): aplica titulo/descricao/status
+     * preservando id/dataCriacao; descricao ausente -> null. id inexistente ->
+     * ResourceNotFoundException (AC4.2), nada salvo. O status chega garantido
+     * nao-nulo pela validacao @NotNull (OQ-1 Resolved).
+     */
+    public TarefaResponse atualizar(String id, TarefaUpdateRequest request) {
+        Tarefa tarefa = buscarOuFalhar(id);
+        mapper.applyUpdate(tarefa, request);
+        return mapper.toResponse(repository.save(tarefa));
     }
 
     private Tarefa buscarOuFalhar(String id) {
