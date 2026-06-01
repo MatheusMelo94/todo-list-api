@@ -42,6 +42,13 @@
             <groupId>org.springframework.boot</groupId>
             <artifactId>spring-boot-starter-security</artifactId>
         </dependency>
+        <!-- Bucket4j (core, in-memory) para rate limiting in-app (ADR-0003 Accepted).
+             Tecnologia nova fora do § Stack Baseline, aprovada via ADR-0003. -->
+        <dependency>
+            <groupId>com.bucket4j</groupId>
+            <artifactId>bucket4j_jdk17-core</artifactId>
+            <version>8.14.0</version>
+        </dependency>
 
         <dependency>
             <groupId>org.springframework.boot</groupId>
