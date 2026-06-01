@@ -47,7 +47,7 @@ services:
       # ajuste/remova conforme necessidade. Lido pelo ENTRYPOINT (sh -c exec
       # java $JAVA_OPTS -jar app.jar).
       - key: JAVA_OPTS
-        value: -XX:MaxRAMPercentage=75.0
+        value: -XX:MaxRAMPercentage=50.0 -XX:+UseSerialGC -Xss512k
 
     # PORT e injetada automaticamente pelo Render no runtime; o profile prod
     # honra ${PORT:8080}. Nao a declare aqui (o Render a gerencia).
