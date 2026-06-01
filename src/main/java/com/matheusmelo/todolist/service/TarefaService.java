@@ -61,6 +61,14 @@ public class TarefaService {
         return mapper.toResponse(repository.save(tarefa));
     }
 
+    /** Deleta a tarefa por id (AC5.1); id inexistente -> ResourceNotFoundException (AC5.2). */
+    public void deletar(String id) {
+        if (!repository.existsById(id)) {
+            throw new ResourceNotFoundException("Tarefa nao encontrada");
+        }
+        repository.deleteById(id);
+    }
+
     private Tarefa buscarOuFalhar(String id) {
         return repository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("Tarefa nao encontrada"));
