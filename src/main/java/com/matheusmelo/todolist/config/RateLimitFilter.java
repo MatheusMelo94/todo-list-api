@@ -65,9 +65,27 @@ public class RateLimitFilter extends OncePerRequestFilter {
                 && request.getRequestURI().startsWith("/tarefas");
     }
 
-    /** Chave do bucket: IP + metodo + URI (contadores por IP e por endpoint). */
+    /**
+     * Chave do bucket: IP + metodo + ROTA LOGICA (template do endpoint), nao a URI
+     * concreta — F-0009; spec 002 AC1.1 ("60/min por IP por endpoint de escrita").
+     *
+     * <p>{@code getRequestURI()} inclui o id de path, o que daria a cada id um bucket
+     * proprio e permitiria contornar o limite de PUT/DELETE variando o id. Normalizamos
+     * o segmento de id apos {@code /tarefas/} para o placeholder {@code {id}}, de modo
+     * que PUT/DELETE em ids distintos compartilhem a cota (IP + verbo + rota logica).
+     * POST {@code /tarefas} (URI fixa, sem segmento) permanece inalterado.
+     */
     private String chave(HttpServletRequest request) {
-        return request.getRemoteAddr() + "|" + request.getMethod() + "|" + request.getRequestURI();
+        return request.getRemoteAddr()
+                + "|"
+                + request.getMethod()
+                + "|"
+                + rotaLogica(request.getRequestURI());
+    }
+
+    /** Normaliza {@code /tarefas/{qualquer-id}} -> {@code /tarefas/{id}}; demais paths inalterados. */
+    private String rotaLogica(String uri) {
+        return uri.replaceFirst("^/tarefas/[^/]+", "/tarefas/{id}");
     }
 
     private long nanosParaSegundos(long nanos) {
